@@ -52,7 +52,7 @@ FlowIPManagerSpinlock::configure(Vector<String> &conf, ErrorHandler *errh)
         click_chatter("Real capacity will be %d",_table_size);
     }
 
-    find_children(_verbose);
+    find_children(this, _verbose);
 
     router()->get_root_init_future()->postOnce(&_fcb_builded_init_future);
     _fcb_builded_init_future.post(this);

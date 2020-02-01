@@ -45,7 +45,7 @@ FlowIPManager::configure(Vector<String> &conf, ErrorHandler *errh)
         .complete() < 0)
         return -1;
 
-    find_children(_verbose);
+    find_children(this, _verbose);
 
     router()->get_root_init_future()->postOnce(&_fcb_builded_init_future);
     _fcb_builded_init_future.post(this);
@@ -57,8 +57,15 @@ FlowIPManager::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-int FlowIPManager::initialize(ErrorHandler *errh)
-{
+void *
+FlowIPManager::cast(const char *name) {
+    if (strcmp(name,"VirtualFlowManager") == 0)
+        return dynamic_cast<VirtualFlowManager*>(this);
+    return FlowElement::cast(name);
+}
+
+
+int FlowIPManager::initialize(ErrorHandler *errh) {
     struct rte_hash_parameters hash_params = {0};
     char buf[32];
     hash_params.name = buf;
@@ -103,7 +110,7 @@ bool FlowIPManager::run_task(Task* t)
         int old = (recent - prev->lastseen).sec();
         if (old > _timeout) {
             //click_chatter("Release %p as it is expired since %d", prev, old);
-        //expire
+            //expire
             rte_hash_free_key_with_position(hash, prev->data_32[0]);
         } else {
             //click_chatter("Cascade %p", prev);
@@ -182,7 +189,7 @@ void FlowIPManager::push_batch(int, PacketBatch* batch)
 
     batch = b.finish();
     if (batch) {
-    fcb_stack->lastseen = recent;
+        fcb_stack->lastseen = recent;
         output_push_batch(0, batch);
     }
 }

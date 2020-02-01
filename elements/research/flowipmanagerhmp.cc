@@ -45,7 +45,7 @@ FlowIPManagerHMP::configure(Vector<String> &conf, ErrorHandler *errh)
             .complete() < 0)
         return -1;
 
-    find_children(_verbose);
+    find_children(this, _verbose);
 
     router()->get_root_init_future()->postOnce(&_fcb_builded_init_future);
     _fcb_builded_init_future.post(this);
@@ -129,6 +129,6 @@ void FlowIPManagerHMP::push_batch(int, PacketBatch* batch)
 
 CLICK_ENDDECLS
 
-ELEMENT_REQUIRES(dpdk)
+ELEMENT_REQUIRES(dpdk flow)
 EXPORT_ELEMENT(FlowIPManagerHMP)
 ELEMENT_MT_SAFE(FlowIPManagerHMP)

@@ -82,7 +82,7 @@ class TimerWheelSpinlock {
  * =a FlowIPManger
  *
  */
-class FlowIPManagerSpinlock: public VirtualFlowManager, public Router::InitFuture {
+class FlowIPManagerSpinlock: public FlowElement, VirtualFlowManager, public Router::InitFuture {
     public:
         FlowIPManagerSpinlock() CLICK_COLD;
         ~FlowIPManagerSpinlock() CLICK_COLD;

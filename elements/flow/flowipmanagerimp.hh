@@ -32,13 +32,14 @@ struct rte_hash;
  * =a FlowIPManger
  *
  */
-class FlowIPManagerIMP: public VirtualFlowManager, public Router::InitFuture {
+class FlowIPManagerIMP: public FlowElement, VirtualFlowManager, public Router::InitFuture {
     public:
         FlowIPManagerIMP() CLICK_COLD;
         ~FlowIPManagerIMP() CLICK_COLD;
 
         const char *class_name() const { return "FlowIPManagerIMP"; }
         const char *port_count() const { return "1/1"; }
+        void* cast(const char *name) override;
 
         const char *processing() const { return PUSH; }
         int configure_phase() const { return CONFIGURE_PHASE_PRIVILEGED + 1; }

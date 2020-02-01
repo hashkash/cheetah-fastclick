@@ -205,7 +205,7 @@ private:
 /**
  * Element that allocates some FCB Space
  */
-class VirtualFlowManager : public FlowElement { public:
+class VirtualFlowManager { public:
     VirtualFlowManager();
 protected:
     int _reserve;
@@ -213,10 +213,10 @@ protected:
     typedef Pair<Element*,int> EDPair;
     Vector<EDPair>  _reachable_list;
 
-    static Vector<VirtualFlowManager*> _entries;
+    static Vector<FlowElement*> _entries;
     static CounterInitFuture _fcb_builded_init_future;
 
-    void find_children(int verbose = 0);
+    void find_children(FlowElement* e, int verbose = 0);
 
     static void _build_fcb(int verbose,  bool ordered);
     static void build_fcb();

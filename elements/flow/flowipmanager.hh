@@ -33,16 +33,17 @@ struct rte_hash;
  * =a FlowIPManger
  *
  */
-class FlowIPManager: public VirtualFlowManager, public Router::InitFuture {
+class FlowIPManager: public FlowElement, VirtualFlowManager, public Router::InitFuture {
     public:
         FlowIPManager() CLICK_COLD;
         ~FlowIPManager() CLICK_COLD;
 
-        const char *class_name() const { return "FlowIPManager"; }
-        const char *port_count() const { return "1/1"; }
+        const char *class_name() const override { return "FlowIPManager"; }
+        const char *port_count() const override { return "1/1"; }
+        void* cast(const char *name) override;
 
-        const char *processing() const { return PUSH; }
-        int configure_phase() const { return CONFIGURE_PHASE_PRIVILEGED + 1; }
+        const char *processing() const override { return PUSH; }
+        int configure_phase() const override { return CONFIGURE_PHASE_PRIVILEGED + 1; }
 
         int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
         int initialize(ErrorHandler *errh) CLICK_COLD;

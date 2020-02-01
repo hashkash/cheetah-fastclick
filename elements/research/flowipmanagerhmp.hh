@@ -5,14 +5,15 @@
 #include <click/timer.hh>
 #include <click/vector.hh>
 #include <click/multithread.hh>
-#include <click/batchelement.hh>
+#include <click/flow/flowelement.hh>
+#include <click/batchbuilder.hh>
 #include <click/hashtablemp.hh>
 #include <click/pair.hh>
 #include <click/ipflowid.hh>
 #include <click/flow/common.hh>
 #include <click/timerwheel.hh>
 
-#include "../flow/flowipmanager.hh"
+class DPDKDevice;
 
 CLICK_DECLS
 
@@ -21,7 +22,7 @@ CLICK_DECLS
  *
  * @see also FlowIPManager
  */
-class FlowIPManagerHMP: public VirtualFlowManager, Router::InitFuture {
+class FlowIPManagerHMP: public FlowElement, VirtualFlowManager, Router::InitFuture {
 
     public:
         FlowIPManagerHMP() CLICK_COLD;
