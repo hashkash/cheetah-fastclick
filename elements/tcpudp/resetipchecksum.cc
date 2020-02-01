@@ -63,30 +63,19 @@ ResetIPChecksum::simple_action(Packet *p_in)
             mbuf->l3_len = p->network_header_length();
 
             if (_l4) {
-                uint16_t sum;
-			if (iph->ip_p == IP_PROTO_TCP) {
+		if (iph->ip_p == IP_PROTO_TCP) {
                     click_tcp *tcph = p->tcp_header();
                     mbuf->l4_len = tcph->th_off << 2;
-                #if RTE_VERSION >= RTE_VERSION_NUM(19,8,0,0)
-                    sum = rte_ipv4_phdr_cksum((const struct rte_ipv4_hdr *)iph, mbuf->ol_flags);
-                #else
-                    sum = rte_ipv4_phdr_cksum((struct ipv4_hdr *)iph, mbuf->ol_flags);
-                #endif
-					tcph->th_sum = sum;
+					tcph->th_sum = rte_ipv4_phdr_cksum((struct rte_ipv4_hdr *)iph, mbuf->ol_flags);
 					mbuf->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_TCP_CKSUM | PKT_TX_IPV4;
 				} else if (iph->ip_p == IP_PROTO_UDP) {
 			        click_udp *udph = p->udp_header();
 			        mbuf->l4_len = sizeof(click_udp);
-                #if RTE_VERSION >= RTE_VERSION_NUM(19,8,0,0)
-                    sum = rte_ipv4_phdr_cksum((const struct rte_ipv4_hdr *)iph, mbuf->ol_flags);
-                #else
-                    sum = rte_ipv4_phdr_cksum((struct ipv4_hdr *)iph, mbuf->ol_flags);
-                #endif
-			        udph->uh_sum = sum;
-				mbuf->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_UDP_CKSUM | PKT_TX_IPV4;
-			} else {
+			udph->uh_sum = rte_ipv4_phdr_cksum((struct rte_ipv4_hdr *)iph, mbuf->ol_flags);
+			mbuf->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_UDP_CKSUM | PKT_TX_IPV4;
+		} else {
 			mbuf->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_IPV4;
-			}
+		}
             } else {
 		mbuf->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_IPV4;
             }
