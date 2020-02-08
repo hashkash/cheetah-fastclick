@@ -56,6 +56,9 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     bool has_mtu = false;
     bool set_timestamp = false;
     FlowControlMode fc_mode(FC_UNSET);
+    uint64_t rss_hf;
+    bool has_rss_hf;
+    String rss_key;
 
     if (Args(this, errh).bind(conf)
         .read_mp("PORT", dev)
@@ -72,6 +75,9 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
         .read("MAXQUEUES", maxqueues)
         .read("TIMESTAMP", set_timestamp)
         .read("PAUSE", fc_mode)
+		.read_or_set("PREFETCH_SECOND", _prefetch_sec, false)
+        .read("RSS_HF", MaskArg(DPDKDevice::RSS_HF_MAP()) , rss_hf).read_status(has_rss_hf)
+        .read("RSS_KEY", rss_key)
         .complete() < 0)
         return -1;
 
@@ -115,6 +121,20 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     if (fc_mode != FC_UNSET)
         _dev->set_init_fc_mode(fc_mode);
 
+    if (has_rss_hf) {
+        _dev->set_init_rss_hf(rss_hf);
+    }
+
+    if (rss_key) {
+        _dev->set_init_rss_key(rss_key);
+    }
+
+#ifdef DEV_RX_OFFLOAD_RSS_HASH
+    if (_set_rss_aggregate) {
+	_dev->set_rx_offload(DEV_RX_OFFLOAD_RSS_HASH);
+    }
+#endif
+
     if (set_timestamp) {
 #if RTE_VERSION >= RTE_VERSION_NUM(18,02,0,0)
         _dev->set_rx_offload(DEV_RX_OFFLOAD_TIMESTAMP);
@@ -152,6 +172,8 @@ void* FromDPDKDevice::cast(const char* name) {
     if (String(name) == "UserClockSource")
         return &dpdk_clock;
 #endif
+    if (String(name) == "DPDKDevice")
+        return _dev;
     return RXQueueDevice::cast(name);
 }
 
@@ -224,6 +246,9 @@ bool FromDPDKDevice::run_task(Task *t)
         for (unsigned i = 0; i < n; ++i) {
             unsigned char* data = rte_pktmbuf_mtod(pkts[i], unsigned char *);
             rte_prefetch0(data);
+            if (_prefetch_sec) {
+			rte_prefetch0(data + CLICK_CACHE_LINE_SIZE);
+            }
 #if CLICK_PACKET_USE_DPDK
             WritablePacket *p = static_cast<WritablePacket*>(Packet::make(pkts[i]));
 #elif HAVE_ZEROCOPY

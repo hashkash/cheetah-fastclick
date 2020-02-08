@@ -72,12 +72,18 @@ struct click_tcp {
 #define TCPOPT_SACK_PERMITTED	4
 #define TCPOLEN_SACK_PERMITTED	2
 #define TCPOPT_SACK		5
+#define TCPOPT_ECHO    6
+#define TCPOPT_ECHO_REPLY    7
 #define TCPOPT_TIMESTAMP	8
 #define TCPOLEN_TIMESTAMP	10
 
 struct tcp_opt_timestamp {
 	uint32_t ts_val;
 	uint32_t ts_ecr;
+};
+
+struct tcp_opt_echo {
+    uint32_t echo;
 };
 
 

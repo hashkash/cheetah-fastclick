@@ -195,6 +195,7 @@ private:
 
     DPDKDevice* _dev;
     bool _set_timestamp;
+    bool _prefetch_sec;
 };
 
 CLICK_ENDDECLS

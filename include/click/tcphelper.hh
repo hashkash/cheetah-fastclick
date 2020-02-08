@@ -231,6 +231,9 @@ public:
     static inline void resetTCPChecksum(WritablePacket* packet);
 
 
+    /**
+     * @brief iterate over options calling fnt for each options. Stops if fnt returns false
+     */
     static int iterateOptions(Packet *packet, std::function<bool(uint8_t,void*)> fnt);
 
 };
@@ -446,7 +449,7 @@ inline bool TCPHelper::isJustAnAck(Packet* packet, const bool or_fin)
         return false;
 
     //  If we have other flags, we are more than just an ACK
-    if(flags == TH_ACK || (or_fin && flags == (TH_ACK | TH_FIN)))
+    if(flags == TH_ACK || (or_fin && (flags == (TH_ACK | TH_FIN))))
         return true;
     else
         return false;

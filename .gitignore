@@ -6,6 +6,7 @@
 .dotest
 .vimhistory
 Makefile
+archives
 autom4te*
 bin
 click-buildtool

@@ -298,8 +298,13 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
     dev_conf.txmode.offloads = 0;
 #endif
     dev_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
-    dev_conf.rx_adv_conf.rss_conf.rss_key = NULL;
-    dev_conf.rx_adv_conf.rss_conf.rss_hf = ETH_RSS_IP | ETH_RSS_UDP | ETH_RSS_TCP;
+    if (info.init_rss_key) {
+        dev_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t*)info.init_rss_key.data();
+        dev_conf.rx_adv_conf.rss_conf.rss_key_len = info.init_rss_key.length();
+    } else {
+        dev_conf.rx_adv_conf.rss_conf.rss_key = NULL;
+    }
+    dev_conf.rx_adv_conf.rss_conf.rss_hf = info.init_rss_hf;
     dev_conf.rx_adv_conf.rss_conf.rss_hf &= dev_info.flow_type_rss_offloads;
 
 #if RTE_VERSION >= RTE_VERSION_NUM(18,02,0,0)
@@ -644,6 +649,16 @@ void DPDKDevice::set_init_rss_max(int rss_max) {
     info.init_rss = rss_max;
 }
 
+void DPDKDevice::set_init_rss_hf(uint64_t rss_hf) {
+    assert(!_is_initialized);
+    info.init_rss_hf = rss_hf;
+}
+
+void DPDKDevice::set_init_rss_key(String rss_key) {
+    assert(!_is_initialized);
+    info.init_rss_key = rss_key;
+}
+
 void DPDKDevice::set_init_fc_mode(FlowControlMode fc) {
     assert(!_is_initialized);
     info.init_fc_mode = fc;
@@ -788,7 +803,24 @@ int DPDKDevice::static_initialize(ErrorHandler* errh) {
         }
         return -1;
     }
+
     return 0;
+}
+
+HashTable<String, uint64_t>*
+DPDKDevice::RSS_HF_MAP() {
+    if (rss_hf_map.size() == 0) {
+        rss_hf_map.set("IP", ETH_RSS_IP);
+        rss_hf_map.set("UDP", ETH_RSS_UDP);
+        rss_hf_map.set("TCP", ETH_RSS_TCP);
+#if RTE_VERSION >= RTE_VERSION_NUM(19,8,0,0)
+        rss_hf_map.set("L3_SRC_ONLY", ETH_RSS_L3_SRC_ONLY);
+        rss_hf_map.set("L3_DST_ONLY", ETH_RSS_L3_DST_ONLY);
+        rss_hf_map.set("L4_SRC_ONLY", ETH_RSS_L4_SRC_ONLY);
+        rss_hf_map.set("L4_DST_ONLY", ETH_RSS_L4_DST_ONLY);
+#endif
+    }
+    return &rss_hf_map;
 }
 
 int DPDKDevice::initialize(ErrorHandler *errh)
@@ -1057,6 +1089,8 @@ HashTable<portid_t, DPDKDevice> DPDKDevice::_devs;
 struct rte_mempool** DPDKDevice::_pktmbuf_pools;
 unsigned DPDKDevice::_nr_pktmbuf_pools;
 bool DPDKDevice::no_more_buffer_msg_printed = false;
+
+HashTable<String,uint64_t> DPDKDevice::rss_hf_map;
 
 CLICK_ENDDECLS
 

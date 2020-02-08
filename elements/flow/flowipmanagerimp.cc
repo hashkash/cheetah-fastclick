@@ -15,8 +15,7 @@
 
 CLICK_DECLS
 
-FlowIPManagerIMP::FlowIPManagerIMP() : _verbose(1), _flags(0), _timer(this), _task(this)
-{
+FlowIPManagerIMP::FlowIPManagerIMP() : _verbose(1), _flags(0), _timer(this), _task(this), vhash(0) {
 }
 
 FlowIPManagerIMP::~FlowIPManagerIMP()
@@ -40,7 +39,7 @@ FlowIPManagerIMP::configure(Vector<String> &conf, ErrorHandler *errh)
         .complete() < 0)
         return -1;
 
-    if (_timeout >= 0) {
+    if (_timeout > 0) {
         return errh->error("Timeout unsupported!");
     }
 
@@ -59,7 +58,7 @@ int FlowIPManagerIMP::initialize(ErrorHandler *errh)
     struct rte_hash_parameters hash_params = {0};
     char buf[32];
     hash_params.name = buf;
-    _table_size = next_pow2(_table_size/click_max_cpu_ids());
+    _table_size = next_pow2(_table_size/get_passing_threads().weight());
     click_chatter("Real capacity for each table will be %d", _table_size);
     hash_params.entries = _table_size;
     hash_params.key_len = sizeof(IPFlow5ID);
@@ -154,15 +153,15 @@ void FlowIPManagerIMP::process(Packet* p, BatchBuilder& b, const Timestamp& rece
     if (ret < 0) { //new flow
         ret = rte_hash_add_key(table, &fid);
         if (ret < 0) {
-            if (unlikely(_verbose > 0)) {
-                click_chatter("Cannot add key (have %d items. Error %d)!", rte_hash_count(table), ret);
+		    if (unlikely(_verbose > 0)) {
+		        click_chatter("Cannot add key (have %d items. Error %d)!", rte_hash_count(table), ret);
             }
             p->kill();
             return;
         }
         fcb = (FlowControlBlock*)((unsigned char*)fcbs + (_flow_state_size_full * ret));
         fcb->data_32[0] = ret;
-        if (_timeout) {
+        if (_timeout > 0) {
             if (_flags) {
                 _timer_wheel.schedule_after_mp(fcb, _timeout, setter);
             } else {

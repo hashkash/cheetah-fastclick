@@ -7,6 +7,7 @@
 #include <click/confparse.hh>
 #include <click/timestamp.hh>
 #include <click/bitvector.hh>
+#include <click/hashtable.hh>
 #if CLICK_BSDMODULE
 # include <machine/stdarg.h>
 #else
@@ -1397,6 +1398,22 @@ class FilenameArg { public:
 };
 #endif
 
+/** @class MaskArg
+  @brief Parser class for a mask of flags
+
+ */
+class MaskArg { public:
+
+    typedef uint64_t M_T;
+
+    const HashTable<String, M_T>* _map;
+
+    MaskArg(const HashTable<String, M_T>* translation) : _map(translation) {
+    }
+
+    typedef M_T V;
+    bool parse(const String &str, V &result, const ArgContext &args = blank_args);
+};
 
 #if !CLICK_TOOL
 /** @class ElementArg

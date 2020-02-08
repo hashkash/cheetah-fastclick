@@ -205,11 +205,11 @@ class IPFlow5ID : public IPFlowID { public:
     explicit IPFlow5ID(const Packet *p, bool reverse = false);
 
     uint8_t proto() const {
-	return _proto;
+        return (uint32_t)_proto;
     }
 
 protected:
-	uint8_t _proto;
+	uint32_t _proto;
 };
 
 CLICK_ENDDECLS

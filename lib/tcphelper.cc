@@ -112,9 +112,9 @@ int TCPHelper::iterateOptions(Packet *packet, std::function<bool(uint8_t, void*)
 		}*/
 		else
 		{
-			fnt(optStart[0],(void*)&optStart[2]);
+			if (!fnt(optStart[0],(void*)&optStart[2]))
+			    return -2;
 			optStart += optStart[1];
-			return -1;
 		}
 
 		n++;

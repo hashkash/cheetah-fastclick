@@ -1432,6 +1432,42 @@ ElementCastArg::parse(const String &str, Element *&result, const ArgContext &arg
         args.error("element type mismatch, expected %s", type);
     return result;
 }
+
+bool MaskArg::parse(const String &str, V &result, const ArgContext &args) {
+    char* c = const_cast<char*>(&str.data()[0]);
+    char* e;
+    char* s = 0;
+    char* end = c + str.length();
+    result = 0;
+    while (true) {
+        while (c != end && *c !=  '|') {
+            if (*c != ' ') {
+                e = c;
+                if (s == 0)
+                    s = c;
+            }
+            c++;
+        }
+        if (s == 0) {
+            args.error("No keyword !?");
+            return false;
+        }
+        String k = String(s,e + 1);
+        auto it = _map->find(k);
+        if (it) {
+            result = result | it->second;
+        } else {
+            args.error("Unknown keyword '%s'%d", k.c_str(), _map->size());
+            return false;
+        }
+
+        if (c == end)
+            return true;
+        c++;
+        s = 0;
+    }
+}
+
 #endif
 
 CLICK_ENDDECLS

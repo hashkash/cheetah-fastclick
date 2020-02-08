@@ -36,8 +36,8 @@ FlowElement::FlowElement()  {
         in_batch_mode = BATCH_MODE_NEEDED;
 };
 
-FlowElement::~FlowElement()
-{
+FlowElement::~FlowElement() {
+
 };
 /*
 FlowNode*

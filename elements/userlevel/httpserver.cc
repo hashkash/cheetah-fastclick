@@ -116,7 +116,7 @@ int HTTPServer::ahc_echo(
         }
 
     if (server->_verbose)
-    click_chatter("[%s] %s",method,url);
+        click_chatter("[%s] %s",method,url);
 
 
     //Processing request
@@ -174,7 +174,8 @@ int HTTPServer::ahc_echo(
         hname = path.substring(0,pos);
         param = path.substring(pos + 1);
     }
-    click_chatter("Element '%s', handler '%s', param '%s'",ename.c_str(), hname.c_str(),param.c_str());
+    if (server->_verbose)
+        click_chatter("Element '%s', handler '%s', param '%s'",ename.c_str(), hname.c_str(),param.c_str());
 
     if (!e) {
         if (hname == "" || ename == "") {
@@ -237,7 +238,8 @@ int HTTPServer::ahc_echo(
               return MHD_YES;
           } else {
               String data = *static_cast<String*>(*con_cls);
-              click_chatter("Last call with data %s",data.c_str());
+              if (server->_verbose)
+                click_chatter("Last call with data %s",data.c_str());
               if (h->writable()) {
                   int ret;
                   if (isNotPost)

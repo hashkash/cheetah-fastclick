@@ -33,6 +33,7 @@
 #include <click/args.hh>
 #include <click/etheraddress.hh>
 #include <click/timer.hh>
+#include <click/hashtable.hh>
 
 #if RTE_VERSION < RTE_VERSION_NUM(19,8,0,0)
 #define rte_ipv4_hdr ipv4_hdr
@@ -81,7 +82,10 @@ public:
             vlan_filter(false), vlan_strip(false), vlan_extend(false),
             lro(false), jumbo(false),
             n_rx_descs(0), n_tx_descs(0),
-            init_mac(), init_mtu(0), init_rss(-1), init_fc_mode(FC_UNSET), rx_offload(0), tx_offload(0) {
+            init_mac(), init_mtu(0),
+            init_rss(-1), init_rss_hf(ETH_RSS_IP | ETH_RSS_UDP | ETH_RSS_TCP),
+            init_rss_key(""),
+            init_fc_mode(FC_UNSET), rx_offload(0), tx_offload(0) {
             rx_queues.reserve(128);
             tx_queues.reserve(128);
         }
@@ -121,6 +125,8 @@ public:
         EtherAddress init_mac;
         uint16_t init_mtu;
         int init_rss;
+        uint64_t init_rss_hf;
+        String init_rss_key;
         FlowControlMode init_fc_mode;
         uint64_t rx_offload;
         uint64_t tx_offload;
@@ -139,6 +145,8 @@ public:
     EtherAddress get_mac();
     void set_init_mac(EtherAddress mac);
     void set_init_mtu(uint16_t mtu);
+    void set_init_rss_hf(uint64_t rss_hf);
+    void set_init_rss_key(String rss_key);
     void set_init_rss_max(int rss_max);
     void set_init_fc_mode(FlowControlMode fc);
     void set_rx_offload(uint64_t offload);
@@ -197,6 +205,9 @@ public:
     static void free_pkt(unsigned char *, size_t, void *pktmbuf);
 
     static unsigned int get_nb_txdesc(const portid_t &port_id);
+
+
+    static HashTable<String,uint64_t>* RSS_HF_MAP();
 
     static Vector<int> NB_MBUF;
     static int DEFAULT_NB_MBUF;
@@ -258,6 +269,7 @@ private:
 
     struct DevInfo info;
 
+    static HashTable<String,uint64_t> rss_hf_map;
 
     static int get_nb_mbuf(int socket);
     static bool _is_initialized;

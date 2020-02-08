@@ -3,6 +3,7 @@
 #include <click/config.h>
 #include <click/string.hh>
 #include <click/vector.hh>
+#include <click/packetbatch.hh>
 
 CLICK_DECLS
 class DPDKDevice;

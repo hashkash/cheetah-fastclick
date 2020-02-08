@@ -65,11 +65,14 @@ public:
 
     void push(int, Packet *) override;
 
+    void add_handlers() override CLICK_COLD;
 private:
-
+    static String read_handler(Element *handler, void *user_data);
     IPAddress _vip;
     bool _accept_nonsyn;
-
+    static int write_handler(
+      const String &, Element *, void *, ErrorHandler *
+  ) CLICK_COLD;
     friend class IPLoadBalancerReverse;
 
 };
@@ -97,6 +100,7 @@ public:
     void push(int, Packet *) override;
 private:
     IPLoadBalancer* _lb;
+    IPAddress _vip;
 };
 
 

@@ -836,6 +836,7 @@ enable_all_elements
 enable_analysis
 enable_app
 enable_aqm
+enable_cheetah
 enable_ethernet
 enable_etherswitch
 enable_flow
@@ -1557,6 +1558,7 @@ Optional Features:
   --disable-analysis      do not include elements for network analysis
   --disable-app           do not include application-level elements
   --disable-aqm           do not include active queue management elements
+  --disable-cheetah       do not include Cheetah elements
   --disable-ethernet      do not include Ethernet elements
   --enable-etherswitch    include Ethernet switch elements
   --enable-flow           include Enable flow system and elements
@@ -7561,6 +7563,17 @@ else
 fi
 test "x$enable_all_elements" = xyes -a \( "x$enable_aqm" = xNO -o "x$enable_aqm" = x \) && enable_aqm=yes
 if test "x$enable_aqm" = xyes; then
+    :
+
+fi
+# Check whether --enable-cheetah was given.
+if test "${enable_cheetah+set}" = set; then :
+  enableval=$enable_cheetah;
+else
+  enable_cheetah=yes
+fi
+test "x$enable_all_elements" = xyes -a \( "x$enable_cheetah" = xNO -o "x$enable_cheetah" = x \) && enable_cheetah=yes
+if test "x$enable_cheetah" = xyes; then
     :
 
 fi

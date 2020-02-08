@@ -1,58 +1,53 @@
-FastClick
-=========
-This is an extended version of the Click Modular Router featuring an
-improved Netmap support and a new DPDK support. It was the result of
-our ANCS paper available at http://hdl.handle.net/2268/181954, but received
-multiple contributions and improvements since then.
+# FastClick with support for the Cheetah Load Balancer
 
-The [Wiki](https://github.com/tbarbette/fastclick/wiki) provides documentation about the elements and how to use some FastClick features
-such as batching.
+This repository is a modified version of FastClick (see README.fastclick.md)
+that embeds all the elements to build a full-featured Cheetah load-balancer
+(check out our NSDI'20 paper).
 
-Contribution
-------------
-FastClick also aims at keeping a more up-to-date fork and welcomes
-contributions from anyone.
+## Installation
 
-Regular contributors will be given direct access to the repository.
-The general rule of thumb to accept a pull request is to involve
-two different entities. I.e. someone for company A make a PR and
-someone from another company/research unit merges it.
+One should follow the FastClick tutorial, but the main steps are taken here:
 
-Examples
---------
-See conf/fastclick/README.md
-The wiki provides more information about the [I/O frameworks you should use for high speed](https://github.com/tbarbette/fastclick/wiki/High-speed-I-O), such as DPDK and Netmap, and how to configure them.
+ * Install DPDK's dependencies (sudo apt install libelf-dev build-essential pkg-config zlib1g-dev libnuma-dev)
+ * Install DPDK (http://core.dpdk.org/doc/quick-start/). Do not forget to set up a few hugepages, and mount them
+ * Export RTE\_SDK (path to your checked-out DPDK) and RTE\_TARGET
+ * Build FastClick, enabling Cheetah with the following command:
 
-Differences with the ANCS paper
--------------------------------
-For simplicity, we reference all input element as "FromDevice" and output
-element as "ToDevice". However in practice our I/O elements are 
-FromNetmapDevice/ToNetmapDevice and FromDPDKDevice/ToDPDKDevice. They both
-inherit from QueueDevice, which is a generic abstract element to implement a
-device which supports multiple queues (or in a more generic way I/O through
-multiple different threads).
+./configure --enable-dpdk --enable-multithread --disable-linuxmodule --enable-intel-cpu --enable-user-multithread --verbose --enable-select=poll CFLAGS="-O3" CXXFLAGS="-std=c++11 -O3"  --disable-dynamic-linking --enable-poll --enable-bound-port-transfer --enable-local --enble-flow --enable-cheetah --disable-task-stats --enable-cpu-load
 
-Thread vector and bit vector designate the same thing.
+## Running Cheetah
 
-The --enable-dpdk-packet flag allows to use the metadata of the DPDK packets
-and use the click Packet class only as a wrapper, as such the Click buffer
-and the Click pool is completly unused. However we did not spoke of that feature
-in the paper as this doesn't improve performance. DPDK metadata is written
-in the beginning of the packet buffer. And writing the huge Click annotation
-space (~164 bytes) leads to more cache miss than with the Click pool where a
-few Click Packet descriptors are re-used to "link" to differents DPDK buffers
-using the pool recycling mechanism. Even when reducing the annotation to a
-minimal size (dpdk metadata + next + prev + transport header + ...) this still
-force us to fetch a new cacheline.
+Two samples configuration are provided for the stateless and stateful versions in conf/cheetah/. Some steps to configure the load-balancer are common to both parts, hence we'll start with that.
 
+### Common parts
+First, open the configuration file and change the configuration files to match your configuration, particularly:
 
-Getting help
-------------
-Use the github issue tracker (https://github.com/tbarbette/fastclick/issues) or
-contact barbette at kth.se if you encounter any problem.
+define( $verbose 0,       //Verbosity of Cheetah
+        $threads 4,       //Number of threads/cores to use
+        $left 1,          //Index of the interface facing clients
+        $leftip  10.220.0.1,   //IP of the left interface, it is also the VIP
+        $rightip 10.221.0.1,   //IP of the right interface
+        $right 0,         //Index of the interface facing servers
+        $mode "rr",       //Load-balancing mode (rr is round robin)
+        $resettime 5,     //Time to reset statistics counted on the LB
+        $clientgw 10.220.0.5,  //Gateway to clients
+        $leastmode "conn" //Metric used for pow2, least loaded and AWRR
+)
 
-Please do not ask FastClick-related problems on the vanilla Click mailing list.
-If you are sure that your problem is Click related, post it on vanilla Click's
-issue tracker (https://github.com/kohler/click/issues).
+### Stateless
+The heart of the configuration is the CheetahStateless element:
 
-The original Click readme is available in the README.original file.
+```
+   -> [0] cheetah :: CheetahStateless(VIP $leftip,
+                        DST 10.221.0.5, DST 10.221.0.6, DST 10.221.0.7, DST 10.221.0.8,
+                        BUCKETS 256, FIX_TS_ECR true, SET_TS_VAL true, FIX_IP true,
+                        LB_MODE $mode, RESET_TIME $resettime, HASH true,
+                        LST_MODE $leastmode, VERBOSE $verbose)[0]
+```
+
+The list of servers is given by the DST parameter. You may use the `NSERVER N` parameters to utilize only the first N servers, then use the add_server and/or remove_server handlers to start/stop utilizing some servers. The number of buckets is the maximal amount of servers. FIX_TS_ECR means the LB fixes the ECR field of packets passing by so the TS the server receives is not corrupted. SET_TS_VAL fixes backward packets so the VAL encodes the cookie. Both those options are to use in pair. FIX_IP allows to set the destination IP of the server, else only the MAC is resolved but the VIP IP is kept. Other parameters are discussed above. `HASH true` enables obfuscation.
+
+### Stateful
+In the stateful configuration, the IPs parameters of the define are directly replaced inline.
+Stateful configurations (Cuckoo or Cheetah) are split in two parts : the classifier, either CheetahStateful or FlowIPManager. Then, the FlowIPLoadBalancer that uses the flow space set by the classifier to write down the server choice, and then read it back for packets of established connections. Except from that, configurations are very identical.
+The only difference is that the cookie cannot be fixed in the LB, because the LB cannot "set back" the index of the flow space. So the server must echo it back.

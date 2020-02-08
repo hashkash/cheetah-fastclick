@@ -98,12 +98,43 @@ void FlowIPLoadBalancer::push_batch(int, IPLBEntry* flowdata, PacketBatch* batch
 }
 
 
-FlowIPLoadBalancerReverse::FlowIPLoadBalancerReverse() : _lb(0)
-{
+int
+FlowIPLoadBalancer::write_handler(
+        const String &input, Element *e, void *thunk, ErrorHandler *errh) {
+	FlowIPLoadBalancer *cs = static_cast<FlowIPLoadBalancer *>(e);
+
+    return cs->lb_write_handler(input,thunk,errh);
 }
 
-FlowIPLoadBalancerReverse::~FlowIPLoadBalancerReverse()
+String
+FlowIPLoadBalancer::read_handler(Element *e, void *thunk) {
+	FlowIPLoadBalancer *cs = static_cast<FlowIPLoadBalancer *>(e);
+    return cs->lb_read_handler(thunk);
+
+}
+
+
+void
+FlowIPLoadBalancer::add_handlers()
 {
+    add_write_handler("load", write_handler, h_load);
+    add_read_handler("load", read_handler, h_load);
+    add_read_handler("nb_active_servers", read_handler, h_nb_active_servers);
+    add_read_handler("nb_total_servers", read_handler, h_nb_total_servers);
+    add_read_handler("load_conn", read_handler, h_load_conn);
+    add_read_handler("load_bytes", read_handler, h_load_bytes);
+    add_read_handler("load_packets", read_handler, h_load_packets);
+    add_write_handler("remove_server", write_handler, h_remove_server);
+    add_write_handler("add_server", write_handler, h_add_server);
+}
+
+
+FlowIPLoadBalancerReverse::FlowIPLoadBalancerReverse() : _lb(0) {
+
+};
+
+FlowIPLoadBalancerReverse::~FlowIPLoadBalancerReverse() {
+
 }
 
 int
