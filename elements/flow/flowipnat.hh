@@ -84,7 +84,16 @@ typedef HashTableMP<uint16_t,NATEntryOUT> NATHashtable;
 #define NAT_FLOW_TIMEOUT 2 * 1000 //Flow timeout
 
 /**
- * Efficient FCB-based NAT
+ *
+ * =c
+ *
+ * FlowIPNAT([I<KEYWORDS>])
+ * =s flow
+ *
+ * Flow-based NAPT
+ *
+ * =d
+ * Efficient Flow-based NAT
  *
  * Unlike rewriter, we use two separate elements instead of two ports, one for
  * the mapping side and another one (FlowIPNATReverse) for the reverse side.
@@ -101,6 +110,17 @@ typedef HashTableMP<uint16_t,NATEntryOUT> NATHashtable;
  *
  * Therefore both side only use their scratchpad for the rest of the flow, that
  * is classified once for all 4-tuples functions (TCP and UDP based).
+ *
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item SIP
+ *
+ * IP Address. Source IP address.
+ *
+ *
  */
 class FlowIPNAT : public FlowStateElement<FlowIPNAT,NATEntryIN> , TCPHelper {
     public:

@@ -1,6 +1,8 @@
 /*
- * FlowIPNAT.{cc,hh}
- * Copyright (c) 2019-2020 Tom Barbette, KTH Royal Institute of Technology
+ * flowipnat.{cc,hh} -- TCP & UDP NAPT
+ * Tom Barbette
+ *
+ * Copyright (c) 2019 KTH Royal Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -11,7 +13,6 @@
  * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
-
  */
 
 #include <click/config.h>

@@ -107,25 +107,26 @@ protected:
         }
     }
 
-    //We have numbers to start with insead of "server names", so we use prime numbers to mix as a hash
-    int prime_a = 19219;
-    int prime_b = 34483;
+    unsigned cantor(unsigned a, unsigned b) {
+        return ((a + b)  * (a + b + 1))/2 + b;
+    }
+
     void build_hash_ring() {
         Vector<unsigned> new_hash;
         new_hash.resize(_cst_hash.size(), -1);
         int fac = ((new_hash.size() - 1) / _selector.size()) + 1;
         for (int j = 0; j < fac; j++) {
             for (int i = 0; i < _selector.size(); i++) {
-                int server_place = (_selector[i]*prime_a + j*prime_b) % new_hash.size();
+                int server_place = cantor(_selector[i], j) % new_hash.size();
                 new_hash[server_place] = _selector[i];
             }
 
         }
         int cur = _selector[0];
         for (int i = 0; i < new_hash.size(); i++) {
-            if (new_hash[i] == (unsigned)- 1)
+            if (new_hash[i] == - 1) {
                 new_hash[i] = cur;
-            else
+            } else
                 cur = new_hash[i];
         }
         _cst_hash.swap(new_hash);
@@ -368,8 +369,6 @@ protected:
             awrr_timer->schedule_after(Timestamp::make_msec(_awrr_interval));
         }
 
-
-
         if (nserver == 0) {
             if (_autoscale) {
                 nserver=1;
@@ -378,6 +377,14 @@ protected:
             }
         }
 
+        if (_mode_case == round_robin ||_mode_case == weighted_round_robin || _mode_case == auto_weighted_round_robin) {
+            int p = nserver / _current.weight();
+            if (p == 0)
+                p = 1;
+            for (int i = 0; i < _current.weight(); i++) {
+                _current.get_value(i) = (i * p) % nserver;
+            }
+        }
         _spares.reserve(_dsts.size());
         _selector.reserve(_dsts.size());
         for (int i = nserver; i < _dsts.size(); i++)
@@ -413,13 +420,10 @@ protected:
         //            click_chatter("%s", a.c_str());
         switch(_mode_case) {
             case round_robin: {
-                unsigned idx = (*_current) ++;
-                if (idx >= (unsigned)_selector.size()) {
+                int b = _selector.unchecked_at((*_current)++);
+                if (*_current == (unsigned)_selector.size()) {
                     *_current = 0;
-                    idx = 0;
                 }
-                int b = _selector.unchecked_at(idx);
-
                 return b;
             }
             case direct_hash_crc: {

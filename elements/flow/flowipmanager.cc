@@ -92,6 +92,7 @@ int FlowIPManager::initialize(ErrorHandler *errh) {
 
     fcbs =  (FlowControlBlock*)CLICK_ALIGNED_ALLOC(_flow_state_size_full * _table_size);
     CLICK_ASSERT_ALIGNED(fcbs);
+    bzero(fcbs,_flow_state_size_full*_table_size);
     if (!fcbs)
         return errh->error("Could not init data table !");
 

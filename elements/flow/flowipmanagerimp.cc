@@ -58,7 +58,8 @@ int FlowIPManagerIMP::initialize(ErrorHandler *errh)
     struct rte_hash_parameters hash_params = {0};
     char buf[32];
     hash_params.name = buf;
-    _table_size = next_pow2(_table_size/get_passing_threads().weight());
+    auto passing = get_passing_threads();
+    _table_size = next_pow2(_table_size/passing.weight());
     click_chatter("Real capacity for each table will be %d", _table_size);
     hash_params.entries = _table_size;
     hash_params.key_len = sizeof(IPFlow5ID);
@@ -66,10 +67,13 @@ int FlowIPManagerIMP::initialize(ErrorHandler *errh)
     hash_params.hash_func_init_val = 0;
     hash_params.extra_flag = _flags;
 
+
     _flow_state_size_full = sizeof(FlowControlBlock) + _reserve;
+
 
     fcbs =  (FlowControlBlock*)CLICK_ALIGNED_ALLOC(_flow_state_size_full * _table_size);
     CLICK_ASSERT_ALIGNED(fcbs);
+    bzero(fcbs,_flow_state_size_full * _table_size);
     if (!fcbs)
         return errh->error("Could not init data table !");
 
@@ -92,7 +96,6 @@ int FlowIPManagerIMP::initialize(ErrorHandler *errh)
             return errh->error("Could not init flow table !");
         click_chatter("table %d has address %d",i, vhash[i]);
     }
-
     return 0;
 }
 
@@ -112,7 +115,7 @@ bool FlowIPManagerIMP::run_task(Task* t)
         int old = (recent - prev->lastseen).sec();
         if (old > _timeout) {
             //click_chatter("Release %p as it is expired since %d", prev, old);
-        //expire
+            //expire
             rte_hash_free_key_with_position(vhash[click_current_cpu_id()], prev->data_32[0]);//depreciated
         } else {
             //click_chatter("Cascade %p", prev);
@@ -197,7 +200,7 @@ void FlowIPManagerIMP::push_batch(int, PacketBatch* batch)
 
     batch = b.finish();
     if (batch) {
-    fcb_stack->lastseen = recent;
+	fcb_stack->lastseen = recent;
         output_push_batch(0, batch);
     }
 }

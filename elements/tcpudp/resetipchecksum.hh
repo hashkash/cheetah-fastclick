@@ -11,9 +11,9 @@ CLICK_DECLS
  * sets IP packets' checksums
  * =d
  * Expects an IP packet as input.
- * 
+ *
  * Resets the IP checksum and asks hardware to fix it
- * 
+ *
  * =a CheckIPHeader, DecIPTTL, ResetIPDSCP, IPRewriter */
 
 class ResetIPChecksum : public BatchElement { public:

@@ -149,5 +149,6 @@ class FlowIPLoadBalancerReverse : public BatchElement {
         FlowIPLoadBalancer* _lb;
 };
 
+
 CLICK_ENDDECLS
 #endif

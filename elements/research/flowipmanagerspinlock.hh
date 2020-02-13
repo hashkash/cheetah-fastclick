@@ -115,7 +115,6 @@ class FlowIPManagerSpinlock: public FlowElement, VirtualFlowManager, public Rout
         int _verbose;
         int _flags;
 
-
         int _timeout;
         Timer _timer; // Timer to launch the wheel
         Task _task;

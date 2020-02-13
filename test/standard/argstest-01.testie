@@ -1,0 +1,12 @@
+%info
+Tests Args multiple-precision arithmetic with the ArgsTest element.
+
+%require
+click-buildtool provides ArgsTest
+
+%script
+click -qe ArgsTest
+
+%expect stderr
+config:1:{{.*}}
+  All tests pass!

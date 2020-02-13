@@ -414,8 +414,7 @@ CheetahStateless::handle_from_client(Packet *p_in)
             return 0;
         } else*/ {
             //Allocate bucket
-            
-            
+
             b = pick_server(p);
 
             //b = 0;
