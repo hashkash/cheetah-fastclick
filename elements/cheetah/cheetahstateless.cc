@@ -32,9 +32,6 @@
 CLICK_DECLS
 
 CheetahStateless::CheetahStateless() :
-#ifdef CHEETAH_COMPLETE
-    _add_entropy(false),
-#endif
     _hw(0),
     _timer(this)
 {
@@ -57,14 +54,12 @@ CheetahStateless::configure(Vector<String> &conf, ErrorHandler *errh)
             .read_mp("VIP", _vip)
             .read_all("DST", _dsts)
             .read_or_set("HASH", _hash, false)
-
             .read_or_set("FIX_TS_ECR", _fix_ts_ecr, false)
             .read_or_set("SET_TS_VAL", _set_ts_val, true)
             .read_or_set("FIX_IP", _fix_ip, true).read_status(has_fix_ip)
             .read_or_set("VERBOSE", _verbose, 0)
             .read_or_set("RESET_TIME",_reset_time,-1)
 #ifdef CHEETAH_COMPLETE
-            .read_or_set("CONSTANT_COOKIE", _constant_cookie, 0)
             .read_or_set("L2", _l2, false)
 #endif
             .read("HW", hw)
@@ -73,7 +68,7 @@ CheetahStateless::configure(Vector<String> &conf, ErrorHandler *errh)
         return -1;
 
     if (parseLb(conf, this, errh) < 0)
-    return -1;
+        return -1;
 
     if (Args(this, errh).bind(conf).complete() < 0)
         return -1;
@@ -106,7 +101,6 @@ CheetahStateless::configure(Vector<String> &conf, ErrorHandler *errh)
         _timer.initialize(this);
         _timer.schedule_after_sec(_reset_time);
     }
-
 
     if (hw != 0) {
         _hw = (DPDKDevice*)hw->cast("DPDKDevice");
@@ -147,6 +141,8 @@ CheetahStateless::initialize(ErrorHandler *errh)
 {
     if (_track_load)
         click_chatter("Load tracking is ON");
+
+    //Set rules if HW mode is on
     if (_hw != 0) {
         struct rte_flow_attr attr;
         struct rte_flow_action action[3];
@@ -189,7 +185,6 @@ CheetahStateless::initialize(ErrorHandler *errh)
 
             action[2].type = RTE_FLOW_ACTION_TYPE_END;
 
-
             Vector<rte_flow_item> pattern;
 
             rte_flow_item pat;
@@ -226,9 +221,7 @@ CheetahStateless::initialize(ErrorHandler *errh)
             } else {
                 click_chatter("Could not validate pattern with %d patterns with action %s, error %d : %s", pattern.size(), actiont,  res, error.message);
             }
-
         }
-
     }
     _loads.resize(_dsts.size());
     CLICK_ASSERT_ALIGNED(_loads.data());
@@ -245,14 +238,14 @@ inline int CheetahStateless::validate_idx(int b) {
 }
 
 int CheetahStateless::get_id(tcp_opt_timestamp* ts, WritablePacket* p) {
+    // Cookie is in the echo request
     int b = ntohl(ts->ts_ecr);
-#ifdef CHEETAH_COMPLETE
-    if (_add_entropy)
-        b = b - (IPFlowID(p).hashcode());
-#endif
 
+    // Extract cookie from the TS
     int idx = TS_GET_COOKIE(b);
-#ifdef CHEETAH_COMPLETE
+
+#ifdef CHEETAH_COMPLETEi
+    // Just debugging stuffs
     if (unlikely(_verbose > 2)) {
         click_chatter("Got idx %d", idx);
         if (_hash) {
@@ -261,14 +254,18 @@ int CheetahStateless::get_id(tcp_opt_timestamp* ts, WritablePacket* p) {
         }
     }
 #endif
+
+    //If cookie obfuscation is enabled
     if (_hash) {
         idx = (hash(p,false) ^  idx) % _buckets.size();
     }
 
+    // Check the index is valid
     if (unlikely(!validate_idx(idx))) {
         return -1;
     }
 
+    // Fix the timestamp MSB bits so the server gets the correct value
     if (_fix_ts_ecr) {
 #ifdef COOKIE_MSB
         int val = TS_GET_LSB(b) | _buckets[idx].last_ts[TS_GET_VERSION(b)];
@@ -280,14 +277,11 @@ int CheetahStateless::get_id(tcp_opt_timestamp* ts, WritablePacket* p) {
     return idx & _mask;
 }
 
-
-
-//b is always the real bucket id
 void CheetahStateless::set_id(tcp_opt_timestamp* ts, int b, WritablePacket* p) {
+    // Get the server id
     int rand_offset = b & _mask;
-#ifdef CHEETAH_COMPLETE
-    rand_offset |= _constant_cookie;
-#endif
+
+    // If obfuscation is enabled, xor the cookie
     if (_hash) {
 #ifdef CHEETAH_COMPLETE
         //eg b is 3, hash is 938
@@ -303,7 +297,10 @@ void CheetahStateless::set_id(tcp_opt_timestamp* ts, int b, WritablePacket* p) {
         rand_offset = find_rand_offset(b,hash(p,true));
     }
 
+    // Get TS val
     int val = ntohl(ts->ts_val);
+
+    // Put the cookie in the ECR
     if (_fix_ts_ecr) {
     #ifdef COOKIE_MSB
         uint32_t msb = val & ~TS_LSB_MASK;
@@ -339,21 +336,16 @@ void CheetahStateless::set_id(tcp_opt_timestamp* ts, int b, WritablePacket* p) {
             _buckets[b].last_ts[v] = msb;
 #endif
     }
+
 #ifdef COOKIE_MSB
-        val = (val & TS_LSB_MASK) | (rand_offset << TS_SHIFT);
+    val = (val & TS_LSB_MASK) | (rand_offset << TS_SHIFT);
 #else
     // becomes [V / LSB][ COOKIE ]
     val = (rand_offset & TS_COOKIE_MASK) | (TS_GET_MSB(val) << TS_VAL_SHIFT);
 #endif
-#ifdef CHEETAH_COMPLETE
-    if (_add_entropy)
-        val = val + IPFlowID(p,true).hashcode();
-#endif
 
     rewrite_ts(p, ts, 0, htonl(val));
-
 }
-
 
 int
 CheetahStateless::write_handler(
@@ -369,7 +361,6 @@ CheetahStateless::read_handler(Element *e, void *thunk) {
     return cs->lb_read_handler(thunk);
 }
 
-
 void
 CheetahStateless::add_handlers(){
     add_write_handler("load", write_handler, h_load);
@@ -382,8 +373,6 @@ CheetahStateless::add_handlers(){
     add_write_handler("remove_server", write_handler, h_remove_server);
     add_write_handler("add_server", write_handler, h_add_server);
 }
-
-
 
 Packet *
 CheetahStateless::handle_from_client(Packet *p_in)

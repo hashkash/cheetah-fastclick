@@ -47,7 +47,13 @@ The heart of the configuration is the CheetahStateless element:
 
 The list of servers is given by the DST parameter. You may use the `NSERVER N` parameters to utilize only the first N servers, then use the add_server and/or remove_server handlers to start/stop utilizing some servers. The number of buckets is the maximal amount of servers. FIX_TS_ECR means the LB fixes the ECR field of packets passing by so the TS the server receives is not corrupted. SET_TS_VAL fixes backward packets so the VAL encodes the cookie. Both those options are to use in pair. FIX_IP allows to set the destination IP of the server, else only the MAC is resolved but the VIP IP is kept. Other parameters are discussed above. `HASH true` enables obfuscation.
 
+The arguments of the elments are further described in the documentation of the class in elements/cheetah/cheetahstateless.hh
+
 ### Stateful
 In the stateful configuration, the IPs parameters of the define are directly replaced inline.
 Stateful configurations (Cuckoo or Cheetah) are split in two parts : the classifier, either CheetahStateful or FlowIPManager. Then, the FlowIPLoadBalancer that uses the flow space set by the classifier to write down the server choice, and then read it back for packets of established connections. Except from that, configurations are very identical.
 The only difference is that the cookie cannot be fixed in the LB, because the LB cannot "set back" the index of the flow space. So the server must echo it back.
+
+## Understanding Cheetah
+The Cheetah stateless element is implemented in elements/cheetah/cheetahstateless.{cc,hh}
+The element follows the (Fast)Click rules. Packets are pushed to the element through push_batch. Carefully read the documentation of the hh. The push_batch function will call handle_from_server and handle_from_client according to the input port. Documentation of the functions and inline comments should be sufficient to understand.
