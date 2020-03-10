@@ -13,7 +13,7 @@ One should follow the FastClick tutorial, but the main steps are taken here:
  * Export RTE\_SDK (path to your checked-out DPDK) and RTE\_TARGET
  * Build FastClick, enabling Cheetah with the following command:
 
-./configure --enable-dpdk --enable-multithread --disable-linuxmodule --enable-intel-cpu --enable-user-multithread --verbose --enable-select=poll CFLAGS="-O3" CXXFLAGS="-std=c++11 -O3"  --disable-dynamic-linking --enable-poll --enable-bound-port-transfer --enable-local --enble-flow --enable-cheetah --disable-task-stats --enable-cpu-load
+./configure --enable-dpdk --enable-multithread --disable-linuxmodule --enable-intel-cpu --enable-user-multithread --verbose --enable-select=poll CFLAGS="-O3" CXXFLAGS="-std=c++11 -O3"  --disable-dynamic-linking --enable-poll --enable-bound-port-transfer --enable-local --enable-flow --enable-cheetah --disable-task-stats --enable-cpu-load
 
 ## Running Cheetah
 
