@@ -57,5 +57,5 @@ Stateful configurations (Cuckoo or Cheetah) are split in two parts : the classif
 The only difference is that the cookie cannot be fixed in the LB, because the LB cannot "set back" the index of the flow space. So the server must echo it back.
 
 ## Understanding Cheetah
-The Cheetah stateless element is implemented in elements/cheetah/cheetahstateless.{cc,hh}
-The element follows the (Fast)Click rules. Packets are pushed to the element through push_batch. Carefully read the documentation of the hh. The push_batch function will call handle_from_server and handle_from_client according to the input port. Documentation of the functions and inline comments should be sufficient to understand.
+The Cheetah stateless element is implemented in elements/cheetah/cheetahstateless.{cc,hh}.
+The element follows the (Fast)Click conventions. Packets are pushed to the element through push_batch. Carefully read the documentation of the hh. The push_batch function will call handle_from_server or handle_from_client according to the input port. Documentation of the functions and inline comments should be sufficient to understand.
