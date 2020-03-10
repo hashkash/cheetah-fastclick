@@ -22,6 +22,7 @@ Two samples configuration are provided for the stateless and stateful versions i
 ### Common parts
 First, open the configuration file and change the configuration files to match your configuration, particularly:
 
+```
 define( $verbose 0,       //Verbosity of Cheetah
         $threads 4,       //Number of threads/cores to use
         $left 1,          //Index of the interface facing clients
@@ -33,6 +34,7 @@ define( $verbose 0,       //Verbosity of Cheetah
         $clientgw 10.220.0.5,  //Gateway to clients
         $leastmode "conn" //Metric used for pow2, least loaded and AWRR
 )
+```
 
 ### Stateless
 The heart of the configuration is the CheetahStateless element:
