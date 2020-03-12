@@ -22,7 +22,7 @@ One should follow the FastClick tutorial, but the main steps are taken here:
 Two samples configuration are provided for the stateless and stateful versions in conf/cheetah/. Some steps to configure the load-balancer are common to both parts, hence we'll start with that.
 
 ### Common parts
-First, open the configuration file and change the configuration files to match your configuration, particularly:
+First, open the configuration file and change the constants defined in the header to match your testbed, particularly:
 
 ```
 define( $verbose 0,       //Verbosity of Cheetah
