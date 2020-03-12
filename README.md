@@ -10,10 +10,12 @@ One should follow the FastClick tutorial, but the main steps are taken here:
 
  * Install DPDK's dependencies (sudo apt install libelf-dev build-essential pkg-config zlib1g-dev libnuma-dev)
  * Install DPDK (http://core.dpdk.org/doc/quick-start/), but add O=x86_64-native-linuxapp-gcc at the end of "make config T=x86_64-native-linuxapp-gcc" to allow DPDK to be linked against external apps. This is not needed if you used the DPDK menu, or meson. Do not forget to set up a few hugepages, and mount them
- * Export RTE\_SDK (path to your checked-out DPDK) and RTE\_TARGET
+ * Export RTE\_SDK (path to your checked-out DPDK) and RTE\_TARGET (probably x86_64-native-linuxapp-gcc if you followed the tutorial)
  * Build FastClick, enabling Cheetah with the following command:
 
+```
 ./configure --enable-dpdk --enable-multithread --disable-linuxmodule --enable-intel-cpu --enable-user-multithread --verbose --enable-select=poll CFLAGS="-O3" CXXFLAGS="-std=c++11 -O3"  --disable-dynamic-linking --enable-poll --enable-bound-port-transfer --enable-local --enable-flow --enable-cheetah --disable-task-stats --enable-cpu-load
+```
 
 ## Running Cheetah
 
