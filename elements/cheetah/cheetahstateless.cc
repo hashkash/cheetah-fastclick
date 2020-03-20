@@ -110,7 +110,8 @@ CheetahStateless::configure(Vector<String> &conf, ErrorHandler *errh)
     }
 
 #if CHEETAH_HW_HASH
-    click_chatter("Wargning : in HW hash mode, hash must be symmetric even with different DST ip (left) and SRC ip (right)!");
+    if (_hash)
+        click_chatter("Wargning : in HW hash mode, hash must be symmetric even with different DST ip (left) and SRC ip (right)!");
 #endif
     return 0;
 }
