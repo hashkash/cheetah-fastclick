@@ -55,6 +55,9 @@ class CycleCountAccum : public SimpleElement<CycleCountAccum> { public:
     void add_handlers() override CLICK_COLD;
 
     inline Packet* simple_action(Packet *);
+#if HAVE_BATCH
+    inline PacketBatch* simple_action_batch(PacketBatch *batch);
+#endif
 
   private:
 

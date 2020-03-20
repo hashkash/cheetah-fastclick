@@ -10,12 +10,15 @@
 #include <click/hashtablemp.hh>
 #include <click/pair.hh>
 #include <click/ipflowid.hh>
+#include <click/flow/flowelement.hh>
 #include <click/flow/common.hh>
 #include <click/timerwheel.hh>
 
 class DPDKDevice;
 
 CLICK_DECLS
+
+class DPDKDevice;
 
 /**
  * FlowIPManager based on the HashtableMP (hierarchical locked hashtable)
