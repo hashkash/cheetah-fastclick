@@ -16,6 +16,7 @@ class DPDKDevice;
 struct rte_hash;
 
 /**
+ * =c
  * FlowIPManagerMP(...)
  *
  * =s flow
