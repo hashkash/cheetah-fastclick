@@ -245,7 +245,7 @@ int CheetahStateless::get_id(tcp_opt_timestamp* ts, WritablePacket* p) {
     // Extract cookie from the TS
     int idx = TS_GET_COOKIE(b);
 
-#ifdef CHEETAH_COMPLETEi
+#ifdef CHEETAH_COMPLETE
     // Just debugging stuffs
     if (unlikely(_verbose > 2)) {
         click_chatter("Got idx %d", idx);
