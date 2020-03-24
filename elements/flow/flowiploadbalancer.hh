@@ -88,6 +88,8 @@ private:
         IPAddress _vip;
         bool _own_state;
         bool _accept_nonsyn;
+
+	static int handler(int op, String& s, Element* e, const Handler* h, ErrorHandler* errh);
         static String read_handler(Element *handler, void *user_data);
         static int write_handler(
             const String &, Element *, void *, ErrorHandler *

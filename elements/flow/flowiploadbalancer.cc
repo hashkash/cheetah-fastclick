@@ -87,11 +87,24 @@ void FlowIPLoadBalancer::push_batch(int, IPLBEntry* flowdata, PacketBatch* batch
         WritablePacket* q =p->uniqueify();
         p = q;
 
+	unsigned b = flowdata->chosen_server;
+
         nat_debug_chatter("Packet for flow %d", flowdata->chosen_server);
-        IPAddress srv = _dsts[flowdata->chosen_server];
+        IPAddress srv = _dsts[b];
 
         q->ip_header()->ip_dst = srv;
         p->set_dst_ip_anno(srv);
+	if (_track_load) {
+	    if (isSyn(p))
+                 _loads[b].connection_load++;
+	    else if (isFin(p) || isRst(p))
+                 _loads[b].connection_load--;
+
+            _loads[b].packets_load++;
+            _loads[b].bytes_load += p->length();
+        }
+
+
         return true;
     };
     EXECUTE_FOR_EACH_PACKET_UNTIL_DROP(fnt, batch);
@@ -100,6 +113,12 @@ void FlowIPLoadBalancer::push_batch(int, IPLBEntry* flowdata, PacketBatch* batch
         checked_output_push_batch(0, batch);
 }
 
+int
+FlowIPLoadBalancer::handler(int op, String& s, Element* e, const Handler* h, ErrorHandler* errh) {
+    FlowIPLoadBalancer *cs = static_cast<FlowIPLoadBalancer *>(e);
+    return cs->lb_handler(op, s, h->read_user_data(), h->write_user_data(), errh);
+}
+	
 
 int
 FlowIPLoadBalancer::write_handler(
@@ -120,8 +139,7 @@ FlowIPLoadBalancer::read_handler(Element *e, void *thunk) {
 void
 FlowIPLoadBalancer::add_handlers()
 {
-    add_write_handler("load", write_handler, h_load);
-    add_read_handler("load", read_handler, h_load);
+    set_handler("load", Handler::f_read | Handler::f_read_param | Handler::f_write, handler, h_load, h_load);
     add_read_handler("nb_active_servers", read_handler, h_nb_active_servers);
     add_read_handler("nb_total_servers", read_handler, h_nb_total_servers);
     add_read_handler("load_conn", read_handler, h_load_conn);

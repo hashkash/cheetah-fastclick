@@ -80,6 +80,7 @@ protected:
     Vector <unsigned> _cst_hash;
     Vector <unsigned> _spares;
     bool _track_load;
+    bool _force_track_load;
     int _awrr_interval;
     float _alpha;
     bool _autoscale;
@@ -177,11 +178,13 @@ protected:
         bool has_cst_buckets;
         int cst_buckets;
         int nserver;
+	bool force_track_load;
         int ret = Args(lb, errh).bind(conf)
             .read_or_set("LB_MODE", lb_mode,"rr")
             .read_or_set("LST_MODE",lst_mode,"conn")
             .read_or_set("AWRR_TIME",awrr_timer, 100)
             .read_or_set("AUTOSCALE", autoscale, false)
+            .read_or_set("FORCE_TRACK_LOAD", force_track_load, false)
             .read_or_set("NSERVER", nserver, 0)
             .read("CST_BUCKETS", cst_buckets).read_status(has_cst_buckets)
             .read_or_set("AWRR_ALPHA", alpha, 0).consume();
@@ -191,6 +194,7 @@ protected:
 
         _alpha = alpha;
         _autoscale = autoscale;
+	_force_track_load = force_track_load;
         if (has_cst_buckets) {
             _cst_hash.resize(cst_buckets, -1);
         }
@@ -250,15 +254,39 @@ protected:
             h_load,h_nb_total_servers,h_nb_active_servers,h_load_conn,h_load_packets,h_load_bytes,h_add_server,h_remove_server
     };
 
-
-
-
-    int lb_write_handler(
-            const String &input, void *thunk, ErrorHandler *errh) {
-        LoadBalancer *cs = this;
-        switch((uintptr_t) thunk) {
+    
+ int lb_handler(int op, String &data, void *r_thunk, void* w_thunk, ErrorHandler *errh) {
+    
+    LoadBalancer *cs = this;
+    if (op == Handler::f_read) {
+        switch((uintptr_t) r_thunk) {
+           case h_load: {
+                StringAccum acc;
+		if (data) {
+		    int i = atoi(data.c_str());
+                    if (cs->_loads.size() <= i) {
+		        acc << "unknown";
+		    } else {
+		        acc << cs->_loads[i].cpu_load ;
+		    }
+		} else {
+		    for (int i = 0; i < cs->_dsts.size(); i ++) {
+			if (cs->_loads.size() <= i) {
+			    acc << "unknown";
+			} else {
+			    acc << cs->_loads[i].cpu_load ;
+			}
+			acc << (i == cs->_dsts.size() -1?"":" ");
+		    }
+		}
+                data = acc.take_string();
+		return 0;
+            }
+	}
+    } else {
+       switch((uintptr_t)w_thunk) {	
             case h_load: {
-                String s(input);
+                String s(data);
                 //click_chatter("Input %s", s.c_str());
                 while (s.length() > 0) {
                     int ntoken = s.find_left(',');
@@ -276,9 +304,19 @@ protected:
                     s = s.substring(ntoken + 1);
                 }
                 if (cs->_autoscale)
-            cs->checkload();
+	           cs->checkload();
                 return 0;
             }
+	}
+      }
+    }
+
+
+
+    int lb_write_handler(
+            const String &input, void *thunk, ErrorHandler *errh) {
+        LoadBalancer *cs = this;
+        switch((uintptr_t) thunk) {
             case h_add_server: {
                 add_server();
                 break;
@@ -296,20 +334,8 @@ protected:
         LoadBalancer *cs = this;
 
         switch((uintptr_t) thunk) {
-            case h_load: {
-                StringAccum acc;
-                for (int i = 0; i < cs->_dsts.size(); i ++) {
-                    if (cs->_loads.size() <= i) {
-                        acc << "unknown";
-		    } else {
-                        acc << cs->_loads[i].cpu_load ;
-		    }
-                    acc << (i == cs->_dsts.size() -1?"":" ");
-                }
-                return acc.take_string();
-            }
             case h_nb_active_servers: {
-            return String(cs->_selector.size());
+               return String(cs->_selector.size());
             }
             case h_nb_total_servers: {
                 return String(cs->_dsts.size());
@@ -369,7 +395,7 @@ protected:
         }
 
         _lst_case = lsttrans.find(metric).value();
-        _track_load = (isLoadBased(_mode_case)) && _lst_case != cpu;
+        _track_load = ((isLoadBased(_mode_case)) && _lst_case != cpu) || _force_track_load;
 
         if (_mode_case == auto_weighted_round_robin) {
             Timer* awrr_timer = new Timer(atc, this);
@@ -426,11 +452,6 @@ protected:
     }
 
     inline int pick_server(const Packet* p) {
-        /*            String a = "";
-                    for (int i = 0; i < _loads.size(); i++) {
-                        a = a + String(i) + ":" + String(_loads[i].cpu_load) + " ";
-                    }*/
-        //            click_chatter("%s", a.c_str());
         switch(_mode_case) {
             case round_robin: {
                 int b = _selector.unchecked_at((*_current)++);
