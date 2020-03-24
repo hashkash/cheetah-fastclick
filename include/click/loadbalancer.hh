@@ -268,6 +268,10 @@ protected:
                     int server_id = atoi(s.substring(0,pos).c_str());
                     int server_load = atoi(s.substring(pos + 1, ntoken).c_str());
                     //click_chatter("%d is %d",server_id, server_load);
+                    if (cs->_loads.size() <= server_id) {
+                        click_chatter("Invalid server id %d", server_id);
+                        return 1;
+                    }
                     cs->_loads[server_id].cpu_load = server_load;
                     s = s.substring(ntoken + 1);
                 }
@@ -295,7 +299,12 @@ protected:
             case h_load: {
                 StringAccum acc;
                 for (int i = 0; i < cs->_dsts.size(); i ++) {
-                    acc << cs->_loads[i].cpu_load << (i == cs->_dsts.size() -1?"":" ");
+                    if (cs->_loads.size() <= i) {
+                        acc << "unknown";
+		    } else {
+                        acc << cs->_loads[i].cpu_load ;
+		    }
+                    acc << (i == cs->_dsts.size() -1?"":" ");
                 }
                 return acc.take_string();
             }
@@ -397,6 +406,10 @@ protected:
                 _cst_hash.resize(_dsts.size() * 100);
             build_hash_ring();
         }
+
+        _loads.resize(_dsts.size());
+        CLICK_ASSERT_ALIGNED(_loads.data());
+
     }
 
     void set_weights(unsigned weigths_value[]) {

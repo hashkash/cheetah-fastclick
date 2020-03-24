@@ -224,8 +224,8 @@ CheetahStateless::initialize(ErrorHandler *errh)
             }
         }
     }
-    _loads.resize(_dsts.size());
-    CLICK_ASSERT_ALIGNED(_loads.data());
+
+    
     return 0;
 }
 
