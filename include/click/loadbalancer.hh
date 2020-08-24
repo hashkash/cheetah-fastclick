@@ -491,19 +491,16 @@ protected:
                 click_chatter("jenkins hash mode3");
                 click_chatter("------");
                 IPFlowID srv = IPFlowID(p);
-                click_chatter("set srv");
 		unsigned src = srv.saddr();
-                click_chatter("srv->saddr()");
 		click_chatter("saadr: %d", srv.saddr());
-		const uint32_t *p;
-		const IPFlowID *k;
-		k = srv
-		p = ((const uint32_t *)k + 8;
-		unsigned ports = &p;
-		click_chatter("ports: %d", ports);
+		uint16_t dport = srv.dport();
+		uint16_t sport = srv.sport();
+		click_chatter("sport: %d, dport: %d", sport, dport);
+		uint32_t ports = (((uint32_t) dport << 16) | (uint32_t) sport);
+		click_chatter("***ports: %d", ports);
 		// THE INIT_VAL IS TAKEN FROM THE KATRAN SOURCE CODE WHICH IS
 		// MAX_VIPS*RING_SIZE
-                unsigned server_val = jhash_2words(srv.saddr(), 0, 512*65537);
+                unsigned server_val = jhash_2words(srv.saddr(), ports, 512*65537);
                 //unsigned server_val = ipv4_hash_crc(&srv, sizeof(srv), 512*65537);
                 server_val = ((server_val >> 16) ^ (server_val & 65535)) % _selector.size();
                 return _selector.unchecked_at(server_val);
