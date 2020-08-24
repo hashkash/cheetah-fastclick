@@ -9,6 +9,7 @@
 #include <click/multithread.hh>
 #include <click/args.hh>
 #include <click/straccum.hh>
+#include <click/jhash.hh>
 
 class LoadBalancer { public:
 
@@ -22,6 +23,7 @@ class LoadBalancer { public:
         modetrans.find_insert("awrr",auto_weighted_round_robin);
         modetrans.find_insert("least",least_load);
         modetrans.find_insert("pow2",pow2);
+        modetrans.find_insert("jhash",jhash);
         lsttrans.find_insert("conn",connections);
         lsttrans.find_insert("packets",packets);
         lsttrans.find_insert("bytes",bytes);
@@ -37,11 +39,12 @@ class LoadBalancer { public:
         direct_hash,
         direct_hash_crc,
         direct_hash_agg,
-        least_load
+        least_load,
+        jhash
     };
 
     static bool isLoadBased(LBMode mode) {
-        return mode == pow2 || mode == least_load || mode == weighted_round_robin  || mode == auto_weighted_round_robin;
+        return mode == pow2 || mode == least_load || mode == weighted_round_robin  || mode == auto_weighted_round_robin || mode == jhash;
     }
 
     enum LSTMode {
@@ -481,9 +484,33 @@ protected:
                 server_val = ((server_val >> 16) ^ (server_val & 65535)) % _cst_hash.size();
                 return _cst_hash.unchecked_at(server_val);
             }
+	    case jhash: {
+                click_chatter("------");
+                click_chatter("jenkins hash mode1");
+                click_chatter("jenkins hash mode2");
+                click_chatter("jenkins hash mode3");
+                click_chatter("------");
+                IPFlowID srv = IPFlowID(p);
+                click_chatter("set srv");
+		unsigned src = srv.saddr();
+                click_chatter("srv->saddr()");
+		click_chatter("saadr: %d", srv.saddr());
+		const uint32_t *p;
+		const IPFlowID *k;
+		k = srv
+		p = ((const uint32_t *)k + 8;
+		unsigned ports = &p;
+		click_chatter("ports: %d", ports);
+		// THE INIT_VAL IS TAKEN FROM THE KATRAN SOURCE CODE WHICH IS
+		// MAX_VIPS*RING_SIZE
+                unsigned server_val = jhash_2words(srv.saddr(), 0, 512*65537);
+                //unsigned server_val = ipv4_hash_crc(&srv, sizeof(srv), 512*65537);
+                server_val = ((server_val >> 16) ^ (server_val & 65535)) % _selector.size();
+                return _selector.unchecked_at(server_val);
+	    }
             case auto_weighted_round_robin:
             case weighted_round_robin: {
-                //click_chatter("weighted Round Robin mode");
+                click_chatter("weighted Round Robin mode");
                 auto & wh = _weights_helper.read_begin();
                 int b = (*_current)++;
                 if (*_current >= wh.size())
